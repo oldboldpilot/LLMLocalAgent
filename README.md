@@ -1,6 +1,6 @@
-# Qwen3 Coder 32B Local Server
+# Qwen3 Coder 30B A3B Local Server
 
-Local vLLM inference server for Qwen3 Coder 32B with OpenAI-compatible API.
+Local vLLM inference server for Qwen3 Coder 30B A3B with OpenAI-compatible API.
 
 ## Quick Start
 
@@ -16,7 +16,7 @@ export HF_TOKEN="your_huggingface_token_here"
 python scripts/download_model.py
 ```
 
-This downloads Qwen3-Coder-32B-Instruct (~65GB) to `models/Qwen3-Coder-32B-Instruct/`.
+This downloads Qwen3-Coder-30B-A3B-Instruct (~20GB) to `models/Qwen3-Coder-30B-A3B-Instruct/`.
 
 ### 3. Start Server
 
@@ -34,7 +34,7 @@ Use `configs/claude-code.json`:
 {
   "api_type": "openai",
   "base_url": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-32B-Instruct",
+  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
   "api_key": "not-needed-for-local"
 }
 ```
@@ -45,7 +45,7 @@ Use `configs/cursor.json`:
 {
   "api": "OpenAI Compatible",
   "baseUrl": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-32B-Instruct",
+  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
   "Key": "not-needed-for-local"
 }
 ```
@@ -60,7 +60,7 @@ Add to `.vscode/settings.json`:
   "github.copilot.chat.assistant.enabled": true,
   "github.copilot.chat.assistant.name": "Qwen3 Coder",
   "github.copilot.chat.assistant.baseUrl": "http://localhost:12345/v1",
-  "github.copilot.chat.assistant.model": "Qwen/Qwen3-Coder-32B-Instruct"
+  "github.copilot.chat.assistant.model": "Qwen/Qwen3-Coder-30B-A3B-Instruct"
 }
 ```
 
@@ -72,7 +72,7 @@ Add to `.vscode/settings.json`:
    - **Chat > Assistant > Enabled**: Checked
    - **Chat > Assistant > Name**: `Qwen3 Coder`
    - **Chat > Assistant > Base Url**: `http://localhost:12345/v1`
-   - **Chat > Assistant > Model**: `Qwen/Qwen3-Coder-32B-Instruct`
+   - **Chat > Assistant > Model**: `Qwen/Qwen3-Coder-30B-A3B-Instruct`
 
 ### Claude Code (VS Code Extension)
 
@@ -88,7 +88,7 @@ Add to `.vscode/settings.json`:
 {
   "claude-code.apiProvider": "custom",
   "claude-code.customEndpoint": "http://localhost:12345/v1",
-  "claude-code.model": "Qwen/Qwen3-Coder-32B-Instruct",
+  "claude-code.model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
   "claude-code.apiKey": "not-needed-for-local"
 }
 ```
@@ -99,7 +99,7 @@ Add to `.vscode/settings.json`:
 2. Set:
    - **Api Provider**: `Custom`
    - **Custom Endpoint**: `http://localhost:12345/v1`
-   - **Model**: `Qwen/Qwen3-Coder-32B-Instruct`
+   - **Model**: `Qwen/Qwen3-Coder-30B-A3B-Instruct`
    - **Api Key**: `not-needed-for-local`
 
 ### OpenCode
@@ -108,14 +108,14 @@ Add to `.vscode/settings.json`:
 
 ```bash
 export OPENCODE_API_BASE="http://localhost:12345/v1"
-export OPENCODE_MODEL="Qwen/Qwen3-Coder-32B-Instruct"
+export OPENCODE_MODEL="Qwen/Qwen3-Coder-30B-A3B-Instruct"
 ```
 
 **Or create a config file at `~/.opencode/config.json`:**
 ```json
 {
   "apiBase": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-32B-Instruct"
+  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct"
 }
 ```
 
@@ -128,16 +128,16 @@ export OPENCODE_MODEL="Qwen/Qwen3-Coder-32B-Instruct"
 
 ## Model Details
 
-- **Model**: Qwen3-Coder-32B-Instruct
+- **Model**: Qwen3-Coder-30B-A3B-Instruct
 - **Context Length**: 131,072 tokens
-- **Parameters**: 32B
+- **Parameters**: 30B
 - **Quantization**: A3B (Activation-aware Quantized Mixture-of-Experts)
 
 ## Troubleshooting
 
 **Server won't start:**
 - Check if port 12345 is in use: `lsof -i :12345`
-- Ensure model is downloaded: `ls models/Qwen3-Coder-32B-Instruct/`
+- Ensure model is downloaded: `ls models/Qwen3-Coder-30B-A3B-Instruct/`
 - Verify vLLM is installed: `pip show vllm`
 
 **Connection refused:**

@@ -9,8 +9,10 @@ import sys
 from huggingface_hub import HfApi, login
 from pathlib import Path
 
-MODEL_ID = "Qwen/Qwen3-Coder-32B-Instruct"
-LOCAL_MODEL_PATH = Path(__file__).parent.parent / "models" / "Qwen3-Coder-32B-Instruct"
+MODEL_ID = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
+LOCAL_MODEL_PATH = (
+    Path(__file__).parent.parent / "models" / "Qwen3-Coder-30B-A3B-Instruct"
+)
 
 
 def check_huggingface_token():

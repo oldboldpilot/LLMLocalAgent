@@ -8,7 +8,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-MODEL_PATH="$PROJECT_ROOT/models/Qwen3-Coder-32B-Instruct"
+MODEL_PATH="$PROJECT_ROOT/models/Qwen3-Coder-30B-A3B-Instruct"
 SERVER_HOST="0.0.0.0"
 SERVER_PORT="12345"
 GPU_MEMORY_UTILIZATION="0.90"
@@ -80,7 +80,7 @@ check_gpu() {
 
 start_server() {
     log_info "Starting vLLM server..."
-    log_info "Model: Qwen3-Coder-32B-Instruct"
+    log_info "Model: Qwen3-Coder-30B-A3B-Instruct"
     log_info "API Endpoint: http://$SERVER_HOST:$SERVER_PORT/v1"
     log_info "Compatible with: OpenAI, Claude Code, OpenCode, Cursor, Copilot"
     echo ""
