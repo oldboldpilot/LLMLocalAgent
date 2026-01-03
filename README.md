@@ -1,150 +1,287 @@
-# Qwen3 Coder 30B A3B Local Server
+# Local LLM Coding Assistant
 
-Local vLLM inference server for Qwen3 Coder 30B A3B with OpenAI-compatible API.
+Local inference server with **vLLM** (GPU) + **MCP Protocol** (CPU/JAX) for code assistance.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Local Coding Agent Stack                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                   IDE / Client                          │   │
+│   │   (Claude Code, Cursor, VS Code, OpenCode, Aider, etc.) │   │
+│   └────────────────────────┬────────────────────────────────┘   │
+│                            │                                     │
+│            ┌───────────────┴───────────────┐                    │
+│            ▼                               ▼                    │
+│   ┌─────────────────────┐       ┌─────────────────────┐         │
+│   │   Port 12345        │       │   Port 12346        │         │
+│   │   vLLM Server       │       │   MCP Server        │         │
+│   │   - OpenAI REST     │       │   - 13 Tools        │         │
+│   │   - GPU CUDA        │       │   - JAX CPU (JIT)   │         │
+│   │   - Continuous      │       │   - HTTP REST       │         │
+│   │     Batching        │       │                     │         │
+│   │   - PagedAttention  │       │                     │         │
+│   └─────────────────────┘       └─────────────────────┘         │
+│            ▲                               ▲                    │
+│            │                               │                    │
+│            │          GPU │ CPU           │                    │
+│            └──────────────┼───────────────┘                    │
+│                           │                                     │
+│                    ┌──────┴──────┐                             │
+│                    │   Hardware  │                             │
+│                    │   GPU+CPU   │                             │
+│                    └─────────────┘                             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Quick Start
 
-### 1. Set Hugging Face Token
+### 1. Start vLLM Server (GPU - Port 12345)
 
 ```bash
-export HF_TOKEN="your_huggingface_token_here"
+cd /home/muyiwa/Development/LLMLocalAgent
+
+# Start vLLM with Gemma 3 12B
+nohup .venv/bin/python -m vllm.entrypoints.openai.api_server \
+  --model models/gemma-3-12b-it \
+  --host 127.0.0.1 --port 12345 \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 32768 > /tmp/vllm.log 2>&1 &
+
+# Verify
+curl http://localhost:12345/health
 ```
 
-### 2. Download Model
+### 2. Start MCP Server (CPU - Port 12346)
 
 ```bash
-python scripts/download_model.py
+cd /home/muyiwa/Development/LLMLocalAgent
+
+export VLLM_API_URL="http://localhost:12345/v1"
+export MODEL_NAME="gemma-3-12b-it"
+
+nohup .venv/bin/python scripts/mcp_server.py > /tmp/mcp.log 2>&1 &
+
+# Verify
+curl http://localhost:12346/health
 ```
 
-This downloads Qwen3-Coder-30B-A3B-Instruct (~20GB) to `models/Qwen3-Coder-30B-A3B-Instruct/`.
-
-### 3. Start Server
+### 3. Or Use Startup Script
 
 ```bash
 ./scripts/start_server.sh
 ```
 
-Server starts on `http://localhost:12345/v1` with OpenAI-compatible endpoints.
+## Why vLLM?
+
+| Feature | vLLM | Vanilla Transformers |
+|---------|------|---------------------|
+| **Throughput** | 2-4x higher | Baseline |
+| **Memory** | PagedAttention, 2x more efficient | Standard caching |
+| **Batching** | Continuous automatic | Static, manual |
+| **Latency** | Optimized decode | Standard |
+| **Setup** | Production-ready | Research-focused |
+
+## Verification
+
+```bash
+# vLLM health
+curl http://localhost:12345/health
+
+# vLLM models
+curl http://localhost:12345/v1/models
+
+# MCP health
+curl http://localhost:12346/health
+
+# MCP tools
+curl http://localhost:12346/mcp/tools
+```
+
+## Usage Examples
+
+### Direct vLLM API
+
+```bash
+curl -X POST http://localhost:12345/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemma-3-12b-it",
+    "messages": [{"role": "user", "content": "Write a Python factorial"}],
+    "max_tokens": 200,
+    "temperature": 0.0
+  }'
+```
+
+### MCP Tool Call
+
+```bash
+curl -X POST http://localhost:12346/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "explain_code",
+    "arguments": {
+      "code": "def quicksort(arr): ...",
+      "detail_level": "detailed"
+    }
+  }'
+```
+
+### JAX Similarity Search
+
+```bash
+curl -X POST http://localhost:12346/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "find_similar_code",
+    "arguments": {
+      "code": "def add(a, b): return a + b",
+      "candidates": [
+        "def sum_list(l): return sum(l)",
+        "def mul(x, y): return x * y"
+      ],
+      "top_k": 2
+    }
+  }'
+```
 
 ## IDE Configuration
 
-### Claude Code
-Use `configs/claude-code.json`:
+### Claude Code (`configs/claude-code.json`)
+
 ```json
 {
+  "name": "Gemma 3 12B vLLM",
+  "model": "gemma-3-12b-it",
   "api_type": "openai",
   "base_url": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
-  "api_key": "not-needed-for-local"
+  "api_key": "not-needed-for-local",
+  "context_length": 32768,
+  "temperature": 0.0,
+  "max_tokens": 8192
 }
 ```
 
-### Cursor
-Use `configs/cursor.json`:
+### Cursor (`configs/cursor.json`)
+
 ```json
 {
+  "name": "Gemma 3 12B vLLM",
+  "model": "gemma-3-12b-it",
   "api": "OpenAI Compatible",
   "baseUrl": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
-  "Key": "not-needed-for-local"
+  "Key": "not-needed-for-local",
+  "context_length": 32768,
+  "temperature": 0.0,
+  "max_tokens": 8192
 }
 ```
 
-### VS Code Copilot
+## MCP Tools Reference
 
-**Option 1: Settings JSON (Recommended)**
+| Tool | Description | Location |
+|------|-------------|----------|
+| `complete_code` | Code completion | CPU (JAX→vLLM) |
+| `explain_code` | Explain code | CPU→GPU |
+| `refactor_code` | Refactor code | CPU→GPU |
+| `debug_code` | Debug and fix | CPU→GPU |
+| `write_tests` | Generate tests | CPU→GPU |
+| `generate_docs` | Create docs | CPU→GPU |
+| `write_code` | Write new code | CPU→GPU |
+| `find_bugs` | Bug analysis | CPU→GPU |
+| `optimize_code` | Performance | CPU→GPU |
+| `convert_code` | Language trans. | CPU→GPU |
+| `find_similar_code` | JAX similarity | CPU (JAX) |
+| `list_files` | File listing | CPU |
+| `read_file` | Read file | CPU |
+| `chat` | General chat | CPU→GPU |
 
-Add to `.vscode/settings.json`:
-```json
-{
-  "github.copilot.chat.assistant.enabled": true,
-  "github.copilot.chat.assistant.name": "Qwen3 Coder",
-  "github.copilot.chat.assistant.baseUrl": "http://localhost:12345/v1",
-  "github.copilot.chat.assistant.model": "Qwen/Qwen3-Coder-30B-A3B-Instruct"
-}
+## vLLM vs MCP: What Runs Where
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        vLLM (Port 12345)                    │
+│  GPU CUDA                                                   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  - Transformer forward pass                          │   │
+│  │  - Attention computation (PagedAttention)           │   │
+│  │  - KV cache management                               │   │
+│  │  - Continuous batching                               │   │
+│  │  - Token generation ( autoregressive )              │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ HTTP/gRPC
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                       MCP Server (Port 12346)                │
+│  CPU JAX                                                      │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  - Tool dispatch and orchestration                   │   │
+│  │  - Text encoding (JAX JIT)                           │   │
+│  │  - Similarity computation (JAX JIT)                  │   │
+│  │  - Batch similarity (JAX JIT)                        │   │
+│  │  - HTTP request/response handling                    │   │
+│  │  - File I/O operations                               │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Option 2: VS Code Settings UI**
-
-1. Open VS Code Settings (`Ctrl+,`)
-2. Search for "Copilot Chat"
-3. Set:
-   - **Chat > Assistant > Enabled**: Checked
-   - **Chat > Assistant > Name**: `Qwen3 Coder`
-   - **Chat > Assistant > Base Url**: `http://localhost:12345/v1`
-   - **Chat > Assistant > Model**: `Qwen/Qwen3-Coder-30B-A3B-Instruct`
-
-### Claude Code (VS Code Extension)
-
-**Install Extension:**
-1. Open VS Code Extensions (`Ctrl+Shift+X`)
-2. Search for "Claude Code"
-3. Install the official Anthropic extension
-
-**Configure:**
-
-Add to `.vscode/settings.json`:
-```json
-{
-  "claude-code.apiProvider": "custom",
-  "claude-code.customEndpoint": "http://localhost:12345/v1",
-  "claude-code.model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
-  "claude-code.apiKey": "not-needed-for-local"
-}
-```
-
-**Or via Settings UI:**
-
-1. Extensions > Claude Code > Configuration
-2. Set:
-   - **Api Provider**: `Custom`
-   - **Custom Endpoint**: `http://localhost:12345/v1`
-   - **Model**: `Qwen/Qwen3-Coder-30B-A3B-Instruct`
-   - **Api Key**: `not-needed-for-local`
-
-### OpenCode
-
-**CLI Configuration:**
+## Process Management
 
 ```bash
-export OPENCODE_API_BASE="http://localhost:12345/v1"
-export OPENCODE_MODEL="Qwen/Qwen3-Coder-30B-A3B-Instruct"
+# Check vLLM
+ps aux | grep vllm
+lsof -i :12345
+
+# Check MCP
+ps aux | grep mcp_server
+lsof -i :12346
+
+# vLLM logs
+tail -f /tmp/vllm.log
+
+# MCP logs
+tail -f /tmp/mcp.log
+
+# Kill all
+pkill -9 -f vllm
+pkill -9 -f mcp_server
 ```
 
-**Or create a config file at `~/.opencode/config.json`:**
-```json
-{
-  "apiBase": "http://localhost:12345/v1",
-  "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct"
-}
-```
+## Model Specifications
 
-## Available Endpoints
-
-- `POST /v1/chat/completions` - Chat completions
-- `POST /v1/completions` - Text completions
-- `GET /v1/models` - List models
-- `GET /health` - Health check
-
-## Model Details
-
-- **Model**: Qwen3-Coder-30B-A3B-Instruct
-- **Context Length**: 131,072 tokens
-- **Parameters**: 30B
-- **Quantization**: A3B (Activation-aware Quantized Mixture-of-Experts)
+| Property | Value |
+|----------|-------|
+| Model | gemma-3-12b-it |
+| Parameters | 12B |
+| Context | 32,768 tokens |
+| Quantization | FP16 |
+| Inference | vLLM (GPU) |
+| Tools | MCP + JAX CPU |
 
 ## Troubleshooting
 
-**Server won't start:**
-- Check if port 12345 is in use: `lsof -i :12345`
-- Ensure model is downloaded: `ls models/Qwen3-Coder-30B-A3B-Instruct/`
-- Verify vLLM is installed: `pip show vllm`
+**vLLM won't start:**
+```bash
+lsof -i :12345
+tail /tmp/vllm.log
+nvidia-smi
+```
 
-**Connection refused:**
-- Server running? Check process: `ps aux | grep vllm`
-- Correct port? Default is `12345`
-- Firewall blocking? Allow port `12345`
+**MCP can't connect:**
+```bash
+curl http://localhost:12345/health
+curl http://localhost:12346/health
+tail /tmp/mcp.log
+```
 
 **Out of memory:**
-- Reduce `gpu-memory-utilization` in `start_server.sh`
-- Enable tensor parallelism for multi-GPU
+```bash
+nvidia-smi
+# Reduce --gpu-memory-utilization in start command
+```

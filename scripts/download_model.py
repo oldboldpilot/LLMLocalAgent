@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Custom script to download Qwen3 Coder 32B model using Hugging Face Hub.
-This script handles authentication, partial downloads, and resume capability.
+Custom script to download Qwen2.5 Coder 7B model using Hugging Face Hub.
+Fast, efficient model for local coding assistance.
 """
 
 import os
@@ -9,10 +9,8 @@ import sys
 from huggingface_hub import HfApi, login
 from pathlib import Path
 
-MODEL_ID = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
-LOCAL_MODEL_PATH = (
-    Path(__file__).parent.parent / "models" / "Qwen3-Coder-30B-A3B-Instruct"
-)
+MODEL_ID = "Qwen/Qwen2.5-Coder-7B-Instruct"
+LOCAL_MODEL_PATH = Path(__file__).parent.parent / "models" / "Qwen2.5-Coder-7B-Instruct"
 
 
 def check_huggingface_token():
@@ -58,7 +56,7 @@ def download_model():
             print(f"Error during download: {e}")
             sys.exit(1)
     else:
-        print("Downloading model (this may take a while for ~65GB download)...")
+        print("Downloading model (this may take a while for ~~14GB download)...")
         try:
             api.snapshot_download(
                 repo_id=MODEL_ID,
@@ -92,6 +90,6 @@ def get_size(path):
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("Qwen3 Coder 32B Model Downloader")
+    print("Qwen2.5 Coder 7B Model Downloader")
     print("=" * 60)
     download_model()
