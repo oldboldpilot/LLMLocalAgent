@@ -1,7 +1,17 @@
 [
   {
+    "name": "Local Agent (Gemma 3)",
+    "model": "gemma-3-12b-it-quantized",
+    "api_type": "openai",
+    "base_url": "http://localhost:12346/v1",
+    "api_key": "not-needed-for-local",
+    "context_length": 32768,
+    "temperature": 0.0,
+    "max_tokens": 4096
+  },
+  {
     "name": "Gemma 3 12B Local",
-    "model": "gemma-3-12b-it",
+    "model": "gemma-3-12b-it-quantized",
     "api_type": "openai",
     "base_url": "http://localhost:12345/v1",
     "api_key": "not-needed-for-local",

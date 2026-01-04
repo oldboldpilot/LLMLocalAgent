@@ -20,8 +20,6 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-VENV_PYTHON="$PROJECT_ROOT/.venv/bin/python"
-
 check_model() {
     log_info "Checking model at $MODEL_PATH..."
     if [ ! -d "$MODEL_PATH" ]; then
@@ -32,26 +30,26 @@ check_model() {
     log_info "Model found (size: $MODEL_SIZE)"
 }
 
-start_gemma() {
-    log_info "Starting Gemma 3 server..."
-    log_info "Model: gemma-3-12b-it-quantized"
+start_vllm() {
+    log_info "Starting vLLM server..."
+    log_info "Model: $MODEL_PATH"
     log_info "API: http://$SERVER_HOST:$SERVER_PORT/v1"
-    log_info "MCP: http://$SERVER_HOST:12346/mcp"
     echo ""
 
-    export MODEL_PATH="$MODEL_PATH"
-    export MODEL_NAME="gemma-3-12b-it"
-    export SERVER_PORT="12345"
+    nohup uv run vllm serve "$MODEL_PATH" \
+        --host "$SERVER_HOST" \
+        --port "$SERVER_PORT" \
+        --gpu-memory-utilization 0.85 \
+        --max-model-len 16384 > /tmp/vllm.log 2>&1 &
+    
+    VLLM_PID=$!
+    echo $VLLM_PID > /tmp/vllm.pid
 
-    nohup $VENV_PYTHON "$SCRIPT_DIR/gemma_server.py" > /tmp/gemma.log 2>&1 &
-    SERVER_PID=$!
-    echo $SERVER_PID > /tmp/gemma.pid
-
-    log_info "Gemma server started (PID: $SERVER_PID)"
+    log_info "vLLM server started (PID: $VLLM_PID)"
 
     for i in {1..120}; do
         if curl -s "http://$SERVER_HOST:$SERVER_PORT/health" > /dev/null 2>&1; then
-            log_info "Gemma server is healthy!"
+            log_info "vLLM server is healthy!"
             break
         fi
         sleep 2
@@ -65,7 +63,7 @@ start_mcp() {
     export MODEL_NAME="gemma-3-12b-it"
     export SERVER_PORT="12346"
 
-    nohup $VENV_PYTHON "$SCRIPT_DIR/simple_server.py" > /tmp/mcp.log 2>&1 &
+    nohup uv run "$SCRIPT_DIR/mcp_server.py" > /tmp/mcp.log 2>&1 &
     MCP_PID=$!
     echo $MCP_PID > /tmp/mcp.pid
 
@@ -82,14 +80,15 @@ start_mcp() {
 
 main() {
     echo "=============================================="
-    echo "  Gemma 3 12B Local Server"
-    echo "  (CUDA PyTorch + JAX CPU)"
+    echo "  Gemma 3 12B Local Server (uv)"
+    echo "  (vLLM GPU + MCP JAX CPU)"
     echo "=============================================="
     echo ""
 
+    MODEL_PATH="$PROJECT_ROOT/models/gemma-3-12b-it-quantized"
     check_model
     echo ""
-    start_gemma
+    start_vllm
     echo ""
     start_mcp
 
@@ -98,7 +97,7 @@ main() {
     echo "  Servers Ready!"
     echo "=============================================="
     echo ""
-    echo "Gemma API:     http://localhost:12345/v1"
+    echo "vLLM API:      http://localhost:12345/v1"
     echo "MCP Tools:     http://localhost:12346/mcp/tools"
     echo "Health:        http://localhost:12345/health"
     echo ""

@@ -490,6 +490,16 @@ class MCPHandler(BaseHTTPRequestHandler):
                     "jax_devices": str(jax.devices()),
                 }
             )
+        elif path == "/v1/models":
+            self.send_json({
+                "object": "list",
+                "data": [{
+                    "id": MODEL_NAME,
+                    "object": "model",
+                    "created": 0,
+                    "owned_by": "vllm"
+                }]
+            })
         elif path == "/mcp/tools":
             self.send_json({"tools": MCP_TOOLS})
         else:
@@ -501,10 +511,41 @@ class MCPHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length)) if length > 0 else {}
 
-        if path == "/mcp/call":
+        if path == "/v1/chat/completions":
+            self.handle_chat_v1(body)
+        elif path == "/mcp/call":
             self.handle_mcp_call(body)
         else:
             self.send_json({"error": "Not found"}, 404)
+
+    def handle_chat_v1(self, body: dict) -> None:
+        """Handle OpenAI-compatible chat completions."""
+        try:
+            import asyncio
+            messages = body.get("messages", [])
+            temperature = body.get("temperature", 0.0)
+            max_tokens = body.get("max_tokens", 1024)
+            
+            result = asyncio.run(call_llm(messages, temperature=temperature, max_tokens=max_tokens))
+            
+            self.send_json({
+                "id": f"chatcmpl-{abs(hash(result)) % 1000000}",
+                "object": "chat.completion",
+                "created": 0,
+                "model": MODEL_NAME,
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "content": result},
+                    "finish_reason": "stop"
+                }],
+                "usage": {
+                    "prompt_tokens": -1,
+                    "completion_tokens": -1,
+                    "total_tokens": -1
+                }
+            })
+        except Exception as e:
+            self.send_json({"error": str(e)}, 500)
 
     def handle_mcp_call(self, body: dict) -> None:
         """Handle MCP tool call."""

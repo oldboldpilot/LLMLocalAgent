@@ -156,11 +156,11 @@ curl -X POST http://localhost:12346/mcp/call \
 ```json
 {
   "name": "Gemma 3 12B vLLM",
-  "model": "gemma-3-12b-it",
+  "model": "gemma-3-12b-it-quantized",
   "api_type": "openai",
   "base_url": "http://localhost:12345/v1",
   "api_key": "not-needed-for-local",
-  "context_length": 32768,
+  "context_length": 16384,
   "temperature": 0.0,
   "max_tokens": 8192
 }
@@ -171,14 +171,41 @@ curl -X POST http://localhost:12346/mcp/call \
 ```json
 {
   "name": "Gemma 3 12B vLLM",
-  "model": "gemma-3-12b-it",
+  "model": "gemma-3-12b-it-quantized",
   "api": "OpenAI Compatible",
   "baseUrl": "http://localhost:12345/v1",
   "Key": "not-needed-for-local",
-  "context_length": 32768,
+  "context_length": 16384,
   "temperature": 0.0,
-  "max_tokens": 8192
+  "max_tokens": 16384
 }
+```
+
+### OpenCode (`configs/opencode.json`)
+
+```json
+[
+  {
+    "name": "Gemma 3 12B Local vLLM",
+    "model": "gemma-3-12b-it-quantized",
+    "api_type": "openai",
+    "base_url": "http://localhost:12345/v1",
+    "api_key": "not-needed-for-local",
+    "context_length": 16384,
+    "temperature": 0.0,
+    "max_tokens": 16384
+  },
+  {
+    "name": "Local Agent MCP",
+    "model": "gemma-3-12b-it-quantized",
+    "api_type": "openai",
+    "base_url": "http://localhost:12346/v1",
+    "api_key": "not-needed-for-local",
+    "context_length": 16384,
+    "temperature": 0.0,
+    "max_tokens": 4096
+  }
+]
 ```
 
 ## MCP Tools Reference
