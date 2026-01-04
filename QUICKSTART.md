@@ -2,6 +2,41 @@
 
 Local coding agent with **vLLM** (GPU) + **MCP Protocol** (CPU/JAX) for IDE integration.
 
+## Project Structure
+
+```
+LLMLocalAgent/                          # Project root: /home/muyiwa/Development/LLMLocalAgent/
+├── scripts/                            # Server scripts directory
+│   ├── mcp_server.py                   # MCP server with 13 coding tools (REQUIRED)
+│   ├── start_server.sh                 # Startup script for both servers (REQUIRED)
+│   └── download_model.py               # Model download utility from HuggingFace
+├── configs/                            # IDE configuration files
+│   ├── claude-code.json                # Claude Code config (import to IDE)
+│   ├── cursor.json                     # Cursor config (import to IDE)
+│   └── opencode.json                   # OpenCode config (import to IDE)
+├── models/                             # Model storage directory
+│   └── gemma-3-12b-it-quantized/       # Quantized model (~7.9GB) (REQUIRED)
+├── README.md                           # Full documentation
+└── QUICKSTART.md                       # This file
+```
+
+### Required Files for All Coding Agents
+
+| File/Folder | Location | Purpose |
+|-------------|----------|---------|
+| `models/gemma-3-12b-it-quantized/` | `LLMLocalAgent/models/` | Quantized model (~7.9GB) |
+| `scripts/mcp_server.py` | `LLMLocalAgent/scripts/` | MCP server for 13 coding tools |
+| `scripts/start_server.sh` | `LLMLocalAgent/scripts/` | Starts vLLM + MCP servers |
+
+### IDE Config Files (Import to Your IDE)
+
+| File | IDE | Import Location |
+|------|-----|-----------------|
+| `configs/claude-code.json` | Claude Code | Model Configuration panel |
+| `configs/cursor.json` | Cursor | Settings > AI Features > Models |
+| `configs/opencode.json` | OpenCode | Model settings import |
+| `~/.continue/config.json` | Continue (VS Code) | Home directory |
+
 ## Quick Start
 
 ### 1. Start vLLM (GPU - Port 12345)
@@ -215,16 +250,41 @@ aider --model gemma-3-12b-it-quantized --api-base http://localhost:12345/v1/
 ## Files
 
 ```
-LLMLocalAgent/
+LLMLocalAgent/                          # Project root: /home/muyiwa/Development/LLMLocalAgent/
 ├── scripts/
-│   ├── mcp_server.py      # MCP server with JAX CPU
-│   ├── start_server.sh    # Startup script
-│   └── download_model.py  # Model download
+│   ├── mcp_server.py                   # MCP server with JAX CPU (required)
+│   ├── start_server.sh                 # Startup script (required)
+│   └── download_model.py               # Model download utility
 ├── configs/
-│   ├── claude-code.json   # Claude Code config
-│   ├── cursor.json        # Cursor config
-│   └── opencode.json      # OpenCode config
-├── models/                # Model storage (gemma-3-12b-it-quantized)
-├── README.md              # Full documentation
-└── QUICKSTART.md          # This file
+│   ├── claude-code.json                # Claude Code config
+│   ├── cursor.json                     # Cursor config
+│   └── opencode.json                   # OpenCode config
+├── models/
+│   └── gemma-3-12b-it-quantized/       # Model: ~7.9GB (REQUIRED)
+├── README.md                           # Full documentation
+└── QUICKSTART.md                       # This file
 ```
+
+### Required Files
+
+| File/Folder | Location | Purpose |
+|-------------|----------|---------|
+| `models/gemma-3-12b-it-quantized/` | `LLMLocalAgent/models/` | Quantized model (~7.9GB) |
+| `scripts/mcp_server.py` | `LLMLocalAgent/scripts/` | MCP server for 13 coding tools |
+| `scripts/start_server.sh` | `LLMLocalAgent/scripts/` | Starts vLLM + MCP servers |
+
+### Optional Config Files (Import to IDE)
+
+| File | Location | IDE |
+|------|----------|-----|
+| `configs/claude-code.json` | `LLMLocalAgent/configs/` | Claude Code |
+| `configs/cursor.json` | `LLMLocalAgent/configs/` | Cursor |
+| `configs/opencode.json` | `LLMLocalAgent/configs/` | OpenCode |
+
+### Setup Checklist
+
+- [ ] Clone repository to `LLMLocalAgent/`
+- [ ] Download model to `LLMLocalAgent/models/gemma-3-12b-it-quantized/`
+- [ ] Install dependencies: `uv sync` or `pip install -e .`
+- [ ] Start servers: `./scripts/start_server.sh`
+- [ ] Import IDE config from `LLMLocalAgent/configs/`

@@ -38,6 +38,53 @@ Local inference server with **vLLM** (GPU) + **MCP Protocol** (CPU/JAX) for code
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Project Structure
+
+```
+LLMLocalAgent/                          # Project root directory
+├── scripts/                            # Server scripts
+│   ├── mcp_server.py                   # MCP server with JAX CPU tools
+│   ├── start_server.sh                 # Startup script for both servers
+│   └── download_model.py               # Model download utility
+├── configs/                            # IDE configuration files
+│   ├── claude-code.json                # Claude Code config
+│   ├── cursor.json                     # Cursor config
+│   └── opencode.json                   # OpenCode config
+├── models/                             # Model storage directory
+│   └── gemma-3-12b-it-quantized/       # Quantized model (7.9GB)
+├── configs/                            # Additional config files
+├── README.md                           # Full documentation
+├── QUICKSTART.md                       # Quick start guide
+└── pyproject.toml                      # Python dependencies
+```
+
+## Required Files & Locations
+
+| File/Folder | Location | Purpose |
+|-------------|----------|---------|
+| `models/gemma-3-12b-it-quantized/` | Project root | Quantized model (7.9GB) |
+| `scripts/mcp_server.py` | Project root | MCP server for coding tools |
+| `scripts/start_server.sh` | Project root | Startup script |
+| `configs/claude-code.json` | Project root | Claude Code configuration |
+| `configs/cursor.json` | Project root | Cursor configuration |
+| `configs/opencode.json` | Project root | OpenCode configuration |
+
+### Model Location
+- **Required:** `LLMLocalAgent/models/gemma-3-12b-it-quantized/`
+- **Size:** ~7.9GB (quantized from 23GB)
+- **Download:** Run `python scripts/download_model.py` or download from HuggingFace
+
+### IDE Config Files
+Copy or reference these config files from `LLMLocalAgent/configs/`:
+
+| IDE | Config File | Import/Setup Location |
+|-----|-------------|----------------------|
+| Claude Code | `configs/claude-code.json` | Model Configuration panel |
+| Cursor | `configs/cursor.json` | Settings > AI Features > Models |
+| OpenCode | `configs/opencode.json` | Model settings import |
+| Continue (VS Code) | `~/.continue/config.json` | Home directory |
+| CodeGPT (VS Code) | Extension settings | VS Code Extensions |
+
 ## Quick Start
 
 ### 1. Start vLLM Server (GPU - Port 12345)
@@ -45,9 +92,19 @@ Local inference server with **vLLM** (GPU) + **MCP Protocol** (CPU/JAX) for code
 ```bash
 cd /home/muyiwa/Development/LLMLocalAgent
 
-# Start vLLM with Gemma 3 12B
+# Start vLLM with Gemma 3 12B quantized model
 nohup .venv/bin/python -m vllm.entrypoints.openai.api_server \
-  --model models/gemma-3-12b-it \
+  --model models/gemma-3-12b-it-quantized \
+  --host 127.0.0.1 --port 12345 \
+  --gpu-memory-utilization 0.85 \
+  --max-model-len 16384 > /tmp/vllm.log 2>&1 &
+
+# Or use the startup script
+./scripts/start_server.sh
+
+# Verify
+curl http://localhost:12345/health
+```
   --host 127.0.0.1 --port 12345 \
   --gpu-memory-utilization 0.85 \
   --max-model-len 32768 > /tmp/vllm.log 2>&1 &
@@ -358,12 +415,44 @@ pkill -9 -f mcp_server
 
 | Property | Value |
 |----------|-------|
-| Model | gemma-3-12b-it |
+| Model | gemma-3-12b-it-quantized |
 | Parameters | 12B |
-| Context | 32,768 tokens |
-| Quantization | FP16 |
+| Context | 16,384 tokens |
+| Quantization | Compressed (7.9GB) |
 | Inference | vLLM (GPU) |
 | Tools | MCP + JAX CPU |
+
+## Project Files Summary
+
+```
+LLMLocalAgent/                          # Project root: /home/muyiwa/Development/LLMLocalAgent/
+├── scripts/
+│   ├── mcp_server.py                   # MCP server (Python 3.11+)
+│   ├── start_server.sh                 # Start both servers
+│   └── download_model.py               # Download model from HuggingFace
+├── configs/
+│   ├── claude-code.json                # Claude Code import
+│   ├── cursor.json                     # Cursor import
+│   └── opencode.json                   # OpenCode import
+├── models/
+│   └── gemma-3-12b-it-quantized/       # Model: ~7.9GB (required)
+├── README.md                           # This file
+├── QUICKSTART.md                       # Quick start guide
+└── pyproject.toml                      # Dependencies: vllm, jax, httpx, mcp
+```
+
+### Required vs Optional Files
+
+| Required | Description | Size |
+|----------|-------------|------|
+| `models/gemma-3-12b-it-quantized/` | Quantized model | ~7.9GB |
+| `scripts/mcp_server.py` | MCP tools server | - |
+| `scripts/start_server.sh` | Startup script | - |
+
+| Optional | Description |
+|----------|-------------|
+| `configs/*.json` | IDE configuration files (import to IDE) |
+| `pyproject.toml` | Python dependencies |
 
 ## Troubleshooting
 
