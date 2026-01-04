@@ -151,26 +151,43 @@ curl -X POST http://localhost:12346/mcp/call \
 
 ## IDE Configuration
 
-### Claude Code (`configs/claude-code.json`)
+### Claude Code
 
+Claude Code supports OpenAI-compatible APIs. Import or configure manually:
+
+**Option 1: Import config file**
+```bash
+# In Claude Code, use the Model Configuration panel
+# Import configs/claude-code.json
+```
+
+**Option 2: Manual configuration**
 ```json
 {
-  "name": "Gemma 3 12B vLLM",
+  "name": "Gemma 3 12B Local vLLM",
   "model": "gemma-3-12b-it-quantized",
   "api_type": "openai",
   "base_url": "http://localhost:12345/v1",
   "api_key": "not-needed-for-local",
   "context_length": 16384,
   "temperature": 0.0,
-  "max_tokens": 8192
+  "max_tokens": 16384
 }
 ```
 
-### Cursor (`configs/cursor.json`)
+**Verify connection:**
+```bash
+curl http://localhost:12345/v1/models
+```
 
+### Cursor
+
+Cursor supports OpenAI-compatible APIs for its AI features:
+
+**Configuration:**
 ```json
 {
-  "name": "Gemma 3 12B vLLM",
+  "name": "Gemma 3 12B Local",
   "model": "gemma-3-12b-it-quantized",
   "api": "OpenAI Compatible",
   "baseUrl": "http://localhost:12345/v1",
@@ -181,8 +198,51 @@ curl -X POST http://localhost:12346/mcp/call \
 }
 ```
 
-### OpenCode (`configs/opencode.json`)
+**Setup steps:**
+1. Open Cursor Settings (Ctrl+,)
+2. Go to AI Features > Models
+3. Add new model with the configuration above
 
+### GitHub Copilot (VS Code)
+
+GitHub Copilot doesn't support custom endpoints directly, but you can use the **Copilot Free** with this local server as an alternative:
+
+**Setup VS Code with local LLM:**
+
+1. Install VS Code extension: "Continue" or "CodeGPT" or "Tabby ML"
+
+2. Configure Continue extension (`~/.continue/config.json`):
+```json
+{
+  "models": [
+    {
+      "title": "Gemma 3 12B Local",
+      "provider": "openai",
+      "model": "gemma-3-12b-it-quantized",
+      "apiKey": "not-needed-for-local",
+      "baseUrl": "http://localhost:12345/v1"
+    }
+  ]
+}
+```
+
+3. Or use CodeGPT extension:
+   - Settings > Extensions > CodeGPT
+   - Provider: OpenAI
+   - API Key: not-needed-for-local
+   - Base URL: http://localhost:12345/v1
+   - Model: gemma-3-12b-it-quantized
+
+### OpenCode
+
+OpenCode supports multiple model providers. Import or configure manually:
+
+**Import config:**
+```bash
+# In OpenCode, import configs/opencode.json
+```
+
+**Manual configuration:**
 ```json
 [
   {
@@ -206,6 +266,20 @@ curl -X POST http://localhost:12346/mcp/call \
     "max_tokens": 4096
   }
 ]
+```
+
+### Aider
+
+Aider works with OpenAI-compatible APIs:
+
+```bash
+# Start aider with local model
+aider --model gemma-3-12b-it-quantized --api-base http://localhost:12345/v1/
+
+# Or set environment variables
+export OPENAI_API_KEY="not-needed-for-local"
+export OPENAI_API_BASE="http://localhost:12345/v1"
+aider --model gemma-3-12b-it-quantized
 ```
 
 ## MCP Tools Reference
